@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0b10">
+<title>Hatness</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class'}</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#0b0b10;-webkit-text-size-adjust:100%}
+.reader-text{font-family:'Lora',serif;overflow-wrap:anywhere}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#111}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+.inp{width:100%;background:#0b0b10;border:1px solid #2a2a35;border-radius:.6rem;padding:.6rem .75rem;color:#f3f4f6;font-size:16px;outline:none}
+.inp:focus{border-color:#e11d48}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:.4rem 1rem;border-radius:.6rem;font-size:.8rem;font-weight:600;border:1px solid #2a2a35;background:#16161d;color:#e5e7eb;transition:.15s;cursor:pointer;text-align:center}
+.btn:hover{border-color:#e11d48;color:#fb7185}
+.btn-p{background:#e11d48;border-color:#e11d48;color:#fff}.btn-p:hover{background:#be123c;color:#fff}
+.btn-d:hover{background:#7f1d1d;border-color:#ef4444;color:#fff}
+.btn:disabled{opacity:.5;pointer-events:none}
+.lbl{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin:.75rem 0 .25rem;font-weight:600}
+</style>
+</head>
+<body class="text-gray-100 min-h-full flex flex-col">
+
+<header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <a href="#/" class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Hatness</a>
+      
+    </div>
+    <a href="#/" class="text-sm font-medium text-gray-300 hover:text-rose-400">Home</a>
+  </div>
+</header>
+
+<main class="flex-grow max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+  <aside class="hidden lg:flex lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-4 text-center sticky top-24 min-h-[500px] flex-col justify-between">
+    <div><span class="text-xs uppercase tracking-widest text-gray-500 font-semibold">Sponsored</span>
+      <div class="my-6 p-4 bg-gray-800/50 rounded-lg border border-dashed border-gray-700 flex flex-col items-center justify-center h-80">
+        <p class="text-sm font-medium text-gray-400">Ad</p><p class="text-xs text-gray-500 mt-1">Left Sidebar</p></div></div>
+    <div class="text-xs text-gray-500">Hatness Ads</div>
+  </aside>
+
+  <section id="main-content" class="col-span-1 lg:col-span-8 min-w-0 bg-gray-900 border border-gray-800 rounded-2xl p-3 sm:p-8 min-h-[70vh]"></section>
+
+  <aside class="hidden lg:flex lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-4 text-center sticky top-24 min-h-[500px] flex-col justify-between">
+    <div><span class="text-xs uppercase tracking-widest text-gray-500 font-semibold">Sponsored</span>
+      <div class="my-6 p-4 bg-gray-800/50 rounded-lg border border-dashed border-gray-700 flex flex-col items-center justify-center h-80">
+        <p class="text-sm font-medium text-gray-400">Ad</p><p class="text-xs text-gray-500 mt-1">Right Sidebar</p></div></div>
+    <div class="text-xs text-gray-500">Hatness Ads</div>
+  </aside>
+
+  <!-- Mobile ad slot -->
+  <div class="lg:hidden col-span-1 bg-gray-900 border border-dashed border-gray-700 rounded-xl p-4 text-center text-xs text-gray-500">Sponsored · Ad (mobile banner)</div>
+</main>
+
+<footer class="bg-gray-900 border-t border-gray-800 py-5 mt-auto">
+  <div class="text-center text-sm text-gray-500">&copy; 2026 <strong>Hatness</strong></div>
+</footer>
+<div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg hidden z-[100] max-w-[90vw]"></div>
+
+<script>
+// ================= UTILITIES =================
+const $=id=>document.getElementById(id);
+const main=$('main-content');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'novel';
+const FALLBACK='https://placehold.co/400x600/e11d48/ffffff?text=Hatness';
+const IMG=`onerror="this.onerror=null;this.src='${FALLBACK}'"`;
+const chTitle=c=>`Chapter ${c.number}${c.title?': '+c.title:''}`;
+const paras=t=>String(t||'').split(/\n+/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${esc(p)}</p>`).join('');
+function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('hidden'),2600)}
+
+// ================= API =================
+const TK='hn_token';
+const tok=()=>localStorage.getItem(TK);
+async function api(path,o={}){
+  const h={'content-type':'application/json'};
+  if(o.auth!==false&&tok())h.authorization='Bearer '+tok();
+  const r=await fetch('/api'+path,{method:o.method||'GET',headers:h,body:o.body?JSON.stringify(o.body):undefined});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(d.error||'Request failed');e.status=r.status;throw e}
+  return d;
+}
+async function act(fn,ok){
+  try{await fn();if(ok)toast(ok)}
+  catch(e){if(e.status===401&&tok()){localStorage.removeItem(TK);toast('Session expired, log in again');router()}else toast(e.message)}
+}
+let NOVELS=[];
+const loadNovels=async()=>{NOVELS=await api('/novels',{auth:false})};
+
+// ================= ROUTER =================
+async function router(){
+  const h=location.hash||'#/';let m;
+  main.innerHTML='<p class="text-center text-gray-500 py-20">Loading…</p>';
+  try{
+    if(h==='#/admin'){tok()?await renderAdmin():renderLogin()}
+    else if((m=h.match(/^#\/admin\/novel\/(.+)$/))){tok()?await renderAdminNovel(m[1]):renderLogin()}
+    else{
+      await loadNovels();
+      if((m=h.match(/^#\/novel\/([^/]+)\/chapter\/(\d+)$/)))await renderReader(m[1],+m[2]);
+      else if((m=h.match(/^#\/novel\/([^/]+)$/)))renderNovel(m[1]);
+      else renderHome();
+    }
+  }catch(e){main.innerHTML=`<div class="text-center py-16"><p class="text-gray-300">Something went wrong: ${esc(e.message)}</p><button class="btn mt-4" onclick="router()">Retry</button></div>`}
+  window.scrollTo(0,0);
+}
+
+// ================= PUBLIC VIEWS =================
+function renderHome(){
+  let html=`<div class="text-center mb-8 pb-6 border-b border-gray-800">
+    <span class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-rose-400">Official Platform</span>
+    <h1 class="text-4xl sm:text-5xl font-extrabold mt-2 text-white">Hatness</h1>
+    <p class="text-gray-400 mt-2 max-w-xl mx-auto text-sm sm:text-base">Read your favorite webnovels, updated chapter by chapter.</p></div>
+    <h2 class="text-lg sm:text-xl font-bold text-white mb-4">Webnovel List</h2><div class="space-y-3 sm:space-y-4">`;
+  if(!NOVELS.length)html+=`<p class="text-center text-gray-500 py-16">No webnovels published yet.</p>`;
+  NOVELS.forEach(n=>{html+=`<div class="bg-gray-800/40 border border-gray-800 p-3 sm:p-5 rounded-xl hover:border-rose-500 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+    <a href="#/novel/${n.id}" class="flex items-center gap-3 sm:gap-4 min-w-0">
+      <img src="${esc(n.cover||FALLBACK)}" alt="" class="w-16 h-24 sm:h-20 object-cover rounded-lg shadow shrink-0" ${IMG}>
+      <div class="min-w-0"><span class="text-xs text-rose-400 font-semibold">${esc(n.status)} &bull; ${esc(n.author)} &bull; ${n.chapters.length} chapters</span>
+      <h3 class="text-base sm:text-lg font-bold text-white mt-0.5">${esc(n.title)}</h3>
+      <p class="text-xs text-gray-400 mt-1 line-clamp-2 sm:line-clamp-1">${esc(n.synopsis)}</p></div></a>
+    <a href="#/novel/${n.id}" class="btn sm:shrink-0 !bg-gray-900 hover:!bg-rose-900/20">View Chapters &rarr;</a></div>`});
+  main.innerHTML=html+'</div>';
+}
+function notFound(t,l,href){main.innerHTML=`<div class="text-center py-12"><h2 class="text-2xl font-bold">${t}</h2><a href="${href}" class="mt-4 inline-block text-rose-400 underline">${l}</a></div>`}
+
+let asc=true;
+function renderNovel(id){
+  const n=NOVELS.find(x=>x.id===id);
+  if(!n)return notFound('Novel not found','Back to home','#/');
+  const list=asc?n.chapters:[...n.chapters].reverse();
+  let html=`<div class="mb-5 text-sm text-gray-400 flex gap-2 min-w-0"><a href="#/" class="hover:text-rose-400">Hatness</a><span>/</span><span class="text-gray-200 font-medium truncate">${esc(n.title)}</span></div>
+  <div class="text-center mb-6 pb-6 border-b border-gray-800">
+    <img src="${esc(n.cover||FALLBACK)}" class="w-32 h-48 object-cover rounded-xl shadow-lg mx-auto mb-4" ${IMG}>
+    <h1 class="text-2xl sm:text-4xl font-extrabold text-white">${esc(n.title)}</h1>
+    <p class="text-sm text-gray-400 mt-1">Author: ${esc(n.author)} &bull; ${esc(n.status)}</p>
+    <p class="text-gray-300 mt-3 max-w-2xl mx-auto text-sm">${esc(n.synopsis)}</p></div>
+  <div class="flex items-center justify-between max-w-3xl mx-auto mb-4"><h2 class="text-lg sm:text-xl font-bold text-white">Chapter List</h2>
+    ${n.chapters.length>1?`<button class="btn" onclick="asc=!asc;renderNovel('${n.id}')">${asc?'Oldest first ↑':'Newest first ↓'}</button>`:''}</div>
+  <div class="space-y-2 sm:space-y-3 max-w-3xl mx-auto">`;
+  if(!n.chapters.length)html+=`<p class="text-center text-gray-500">No chapters yet.</p>`;
+  list.forEach(c=>{html+=`<a href="#/novel/${n.id}/chapter/${c.number}" class="block bg-gray-800/40 border border-gray-800 p-3 sm:p-4 rounded-xl hover:border-rose-500 transition flex items-center justify-between gap-3 group">
+    <span class="font-medium text-white group-hover:text-rose-400 text-sm sm:text-base">${esc(chTitle(c))}</span>
+    <span class="hidden sm:inline text-xs font-semibold px-3 py-1 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 shrink-0">Read chapter</span></a>`});
+  main.innerHTML=html+'</div>';
+}
+
+let fontSize=18;
+async function renderReader(id,num){
+  const n=NOVELS.find(x=>x.id===id);
+  if(!n)return notFound('Novel not found','Back to home','#/');
+  const meta=n.chapters.find(x=>x.number===num);
+  if(!meta)return notFound('Chapter not found','Back to index','#/novel/'+id);
+  const c=await api(`/chapter?novel=${id}&n=${num}`,{auth:false});
+  const i=n.chapters.indexOf(meta),p=n.chapters[i-1],nx=n.chapters[i+1];
+  const nav=mid=>`<div class="flex items-center justify-between gap-2">
+    ${p?`<a href="#/novel/${n.id}/chapter/${p.number}" class="btn !bg-gray-800 flex-1 sm:flex-none">&larr; Previous</a>`:'<div class="flex-1 sm:flex-none"></div>'}${mid}
+    ${nx?`<a href="#/novel/${n.id}/chapter/${nx.number}" class="btn btn-p flex-1 sm:flex-none">Next &rarr;</a>`:'<div class="flex-1 sm:flex-none"></div>'}</div>`;
+  main.innerHTML=`<div class="mb-4 flex items-center justify-between gap-2 text-sm text-gray-400">
+    <a href="#/novel/${n.id}" class="hover:text-rose-400 truncate">&larr; ${esc(n.title)}</a>
+    <div class="flex items-center gap-2 text-xs shrink-0"><button onclick="adjFont(-2)" class="px-3 py-2 bg-gray-800 rounded font-bold">A-</button><button onclick="adjFont(2)" class="px-3 py-2 bg-gray-800 rounded font-bold">A+</button></div></div>
+  <div class="text-center mb-5 pb-4 border-b border-gray-800"><h1 class="text-xl sm:text-3xl font-extrabold text-white">${esc(chTitle(c))}</h1></div>
+  <div class="mb-5">${nav(`<a href="#/novel/${n.id}" class="text-xs text-rose-400 font-semibold px-2">Index</a>`)}</div>
+  <div class="bg-gray-800/20 border border-gray-800 p-4 sm:p-12 rounded-2xl mb-6">
+    <div id="chapter-body" style="font-size:${fontSize}px" class="reader-text leading-relaxed text-gray-100 space-y-5 sm:space-y-6">${paras(c.content)}</div></div>
+  ${nav('')}`;
+}
+function adjFont(d){fontSize=Math.max(14,Math.min(28,fontSize+d));const b=$('chapter-body');if(b)b.style.fontSize=fontSize+'px'}
+
+// ================= ADMIN =================
+function renderLogin(){
+  main.innerHTML=`<div class="max-w-sm mx-auto py-12"><h1 class="text-2xl font-extrabold text-white text-center mb-6">Admin access</h1>
+  <input id="pw" type="password" class="inp" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+  <button id="login-btn" class="btn btn-p w-full mt-4" onclick="doLogin()">Log in</button></div>`;
+}
+async function doLogin(){
+  const b=$('login-btn');b.disabled=true;
+  try{const r=await api('/login',{method:'POST',auth:false,body:{password:$('pw').value}});localStorage.setItem(TK,r.token);router()}
+  catch(e){toast(e.message);b.disabled=false}
+}
+function logout(){localStorage.removeItem(TK);location.hash='#/'}
+
+let ed=null,edFor=null;
+async function renderAdmin(){
+  await loadNovels();ed=null;edFor=null;
+  let html=`<div class="mb-5"><span class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-rose-400">Admin panel</span>
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-white">My webnovels</h1>
+    <div class="flex flex-wrap gap-2 mt-3"><a href="#/admin/novel/new" class="btn btn-p">+ New webnovel</a><a href="#/" class="btn">View site</a><button class="btn" onclick="logout()">Log out</button></div></div><div class="space-y-3">`;
+  if(!NOVELS.length)html+=`<p class="text-center text-gray-500 py-12">No webnovels yet. Create the first one with “+ New webnovel”.</p>`;
+  NOVELS.forEach(n=>{html+=`<div class="flex flex-wrap items-center justify-between gap-3 bg-gray-800/40 border border-gray-800 p-3 sm:p-4 rounded-xl">
+    <div class="flex items-center gap-3 min-w-0"><img src="${esc(n.cover||FALLBACK)}" class="w-10 h-14 object-cover rounded shrink-0" ${IMG}>
+    <div class="min-w-0"><div class="font-bold text-white truncate">${esc(n.title)}</div><div class="text-xs text-gray-400">${esc(n.status)} · ${n.chapters.length} chapters</div></div></div>
+    <div class="flex gap-2"><a href="#/admin/novel/${n.id}" class="btn">Edit</a><button class="btn btn-d" onclick="delNovel('${n.id}')">Delete</button></div></div>`});
+  main.innerHTML=html+'</div>';
+}
+function delNovel(id){const n=NOVELS.find(x=>x.id===id);
+  if(n&&confirm(`Delete "${n.title}" and all its chapters? This cannot be undone.`))act(async()=>{await api('/novel?id='+id,{method:'DELETE'});await renderAdmin()},'Deleted')}
+
+async function renderAdminNovel(id){
+  await loadNovels();
+  if(edFor!==id){ed=null;edFor=id}
+  const isNew=id==='new',n=isNew?{id:'',title:'',author:'',status:'Ongoing',synopsis:'',cover:'',chapters:[]}:NOVELS.find(x=>x.id===id);
+  if(!n)return notFound('Novel not found','Back to panel','#/admin');
+  const up=n.cover.startsWith('/api/cover');
+  const nextNum=ed?ed.number:(n.chapters.reduce((m,c)=>Math.max(m,c.number),0)+1);
+  let html=`<a href="#/admin" class="text-sm text-gray-400 hover:text-rose-400">&larr; Back to panel</a>
+  <h1 class="text-xl sm:text-2xl font-extrabold text-white mt-2 mb-2">${isNew?'New webnovel':'Edit: '+esc(n.title)}</h1>
+  <div class="grid sm:grid-cols-2 gap-x-4">
+    <div><label class="lbl">Title</label><input id="f-title" class="inp" value="${esc(n.title)}"></div>
+    <div><label class="lbl">Author</label><input id="f-author" class="inp" value="${esc(n.author)}"></div>
+    <div><label class="lbl">Status</label><select id="f-status" class="inp">${['Ongoing','Completed','On Hold'].map(s=>`<option ${s===n.status?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div><label class="lbl">Cover (URL or upload image)</label><div class="flex gap-2"><input id="f-cover" class="inp" value="${esc(up?'':n.cover)}" placeholder="https://..." oninput="$('cover-prev').src=this.value||'${FALLBACK}';$('f-cover-data').value=''">
+      <label class="btn shrink-0">Upload<input type="file" accept="image/*" class="hidden" onchange="upCover(this)"></label></div></div></div>
+  <input type="hidden" id="f-cover-data" value=""><input type="hidden" id="f-cover-keep" value="${esc(up?n.cover:'')}">
+  <div class="flex gap-3 items-start"><div class="flex-1 min-w-0"><label class="lbl">Synopsis</label><textarea id="f-syn" rows="4" class="inp">${esc(n.synopsis)}</textarea></div>
+    <img id="cover-prev" src="${esc(n.cover||FALLBACK)}" class="w-16 h-24 sm:w-20 sm:h-28 object-cover rounded mt-6 shrink-0" ${IMG}></div>
+  <button id="save-novel" class="btn btn-p mt-4 w-full sm:w-auto" onclick="saveNovel('${id}')">💾 ${isNew?'Create webnovel':'Save details'}</button>`;
+  if(!isNew){
+    html+=`<hr class="border-gray-800 my-6"><h2 class="text-lg sm:text-xl font-bold text-white mb-3">Chapters (${n.chapters.length})</h2>
+    <div class="space-y-2 mb-6 max-h-72 overflow-y-auto pr-1">${n.chapters.length?'':'<p class="text-gray-500 text-sm">No chapters yet.</p>'}`;
+    n.chapters.forEach(c=>{html+=`<div class="flex items-center justify-between gap-2 bg-gray-800/40 border ${ed&&ed.number===c.number?'border-rose-500':'border-gray-800'} px-3 py-2 rounded-lg">
+      <span class="text-sm text-gray-200 truncate">${esc(chTitle(c))}</span>
+      <div class="flex gap-2 shrink-0"><button class="btn" onclick="editChapter('${id}',${c.number})">Edit</button><button class="btn btn-d" onclick="delCh('${id}',${c.number})">Delete</button></div></div>`});
+    html+=`</div><div class="bg-gray-800/30 border border-gray-800 rounded-xl p-3 sm:p-4">
+    <h3 class="font-bold text-white">${ed?'Editing chapter '+ed.number:'Add new chapter'}</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-3"><div><label class="lbl">No.</label><input id="c-num" type="number" inputmode="numeric" min="1" class="inp" value="${nextNum}"></div>
+      <div class="sm:col-span-3"><label class="lbl">Title (without “Chapter N:”)</label><input id="c-title" class="inp" value="${esc(ed?ed.title:'')}" placeholder="Awakening in the ashes"></div></div>
+    <label class="lbl">Content (paste the text here; each line break = new paragraph)</label>
+    <textarea id="c-content" rows="14" class="inp reader-text">${esc(ed?ed.content:'')}</textarea>
+    <div class="flex flex-wrap gap-2 mt-3"><button id="save-ch" class="btn btn-p flex-1 sm:flex-none" onclick="saveCh('${id}')">${ed?'Save changes':'Add chapter'}</button>
+    ${ed?`<button class="btn flex-1 sm:flex-none" onclick="ed=null;renderAdminNovel('${id}')">Cancel edit</button>`:''}</div></div>`;
+  }
+  main.innerHTML=html;
+}
+function upCover(inp){
+  const f=inp.files[0];if(!f)return;const img=new Image(),r=new FileReader();
+  r.onload=()=>{img.onload=()=>{const w=400,h=Math.round(img.height*w/img.width),cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);
+    const u=cv.toDataURL('image/jpeg',.82);$('f-cover-data').value=u;$('f-cover').value='';$('cover-prev').src=u};img.src=r.result};r.readAsDataURL(f);
+}
+async function saveNovel(id){
+  const title=$('f-title').value.trim();if(!title)return toast('Title is required');
+  let nid=id;if(id==='new'){const b=slug(title);let s=b,i=2;while(NOVELS.some(x=>x.id===s))s=b+'-'+i++;nid=s}
+  const cd=$('f-cover-data').value;
+  $('save-novel').disabled=true;
+  await act(async()=>{
+    await api('/novel',{method:'PUT',body:{id:nid,title,author:$('f-author').value.trim(),status:$('f-status').value,synopsis:$('f-syn').value.trim(),
+      cover:cd?'':($('f-cover').value.trim()||$('f-cover-keep').value),coverData:cd}});
+    if(id==='new')location.hash='#/admin/novel/'+nid;else await renderAdminNovel(id);
+  },'Saved');
+  const b=$('save-novel');if(b)b.disabled=false;
+}
+async function editChapter(id,num){await act(async()=>{ed=await api(`/chapter?novel=${id}&n=${num}`,{auth:false});await renderAdminNovel(id);$('c-content').scrollIntoView({behavior:'smooth',block:'center'})})}
+async function saveCh(id){
+  const num=parseInt($('c-num').value,10),content=$('c-content').value.trim();
+  if(!num||num<1)return toast('Invalid number');if(!content)return toast('Content is empty');
+  const n=NOVELS.find(x=>x.id===id);
+  if(n.chapters.some(c=>c.number===num)&&(!ed||ed.number!==num))return toast('Chapter '+num+' already exists');
+  $('save-ch').disabled=true;
+  await act(async()=>{
+    await api('/chapter',{method:'PUT',body:{novel:id,number:num,title:$('c-title').value.trim(),content}});
+    if(ed&&ed.number!==num)await api(`/chapter?novel=${id}&n=${ed.number}`,{method:'DELETE'});
+    ed=null;await renderAdminNovel(id);
+  },'Chapter saved');
+  const b=$('save-ch');if(b)b.disabled=false;
+}
+function delCh(id,num){if(confirm('Delete chapter '+num+'?'))act(async()=>{await api(`/chapter?novel=${id}&n=${num}`,{method:'DELETE'});if(ed&&ed.number===num)ed=null;await renderAdminNovel(id)},'Deleted')}
+
+window.addEventListener('hashchange',router);
+router();
+</script>
+</body>
+</html>
